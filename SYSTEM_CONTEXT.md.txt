@@ -1,0 +1,125 @@
+# SYSTEM CONTEXT – HOTEL + RESTAURANT POS
+
+## 🎯 PROJECT OVERVIEW
+
+This is a full Hotel Management + Restaurant POS system.
+
+The system includes:
+1. Online Hotel Booking (website)
+2. Walk-in Customer Management (reception)
+3. Restaurant POS System
+   - Hotel guest orders (charge to room)
+   - External customer orders (direct payment)
+
+---
+
+## 🧱 SYSTEM ARCHITECTURE
+
+- Frontend: Next.js (App Router)
+- Backend: Fastify (Node.js)
+- Database: PostgreSQL (Prisma)
+- Storage: MinIO
+
+Architecture style:
+- API-based
+- Modular backend
+- Single database
+- Shared services
+
+---
+
+## 🔗 SYSTEM MODULES
+
+### 1. Room Management
+- room_types
+- rooms
+- room availability
+
+### 2. Customer Management
+- guest profiles
+- walk-in customers
+
+### 3. Booking System
+- online booking
+- reservation
+- availability check
+
+### 4. Check-in / Check-out
+- assign room
+- track stay
+- close stay
+
+### 5. Restaurant POS
+- menu
+- orders
+- billing
+- charge to room
+
+### 6. Billing & Payment
+- invoices
+- payments
+- full system billing
+
+---
+
+## 🔄 CORE FLOW
+
+1. Customer books online OR walks in
+2. Reception assigns room
+3. Customer checks in
+4. Customer uses services or restaurant
+5. Charges are added to invoice
+6. Customer checks out and pays
+
+---
+
+## 🧠 DESIGN GOALS
+
+- Clean architecture
+- Scalable system
+- No duplicated logic
+- High performance
+- Easy to maintain
+
+---
+
+## ⚠️ IMPORTANT RULES
+
+- Booking ≠ Check-in
+- Room must not be double-booked
+- Orders must support:
+  - hotel guest
+  - external customer
+- All charges must be unified in invoice
+
+---
+
+## 🚀 DEVELOPMENT APPROACH
+
+- Build system module-by-module
+- Start with core:
+  1. rooms
+  2. customers
+  3. booking
+  4. checkin
+  5. pos
+  6. payment
+
+---
+
+## 🧪 TEST FLOW
+
+System must support:
+
+- Booking → Check-in → POS → Checkout
+
+---
+
+## 🔥 FINAL NOTE
+
+This system must be:
+- Professional
+- Clean
+- Production-ready
+
+Cursor must follow this context strictly.

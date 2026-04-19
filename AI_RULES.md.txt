@@ -1,0 +1,159 @@
+# AI RULES – HOTEL + RESTAURANT POS SYSTEM
+
+## 🚨 STRICT TECHNOLOGY STACK (DO NOT VIOLATE)
+- Frontend: Next.js (App Router) + Tailwind CSS
+- Backend: Node.js with Fastify
+- Database: PostgreSQL
+- ORM: Prisma
+- File Storage: MinIO (S3-compatible)
+
+❌ DO NOT USE:
+- Express.js
+- MongoDB
+- Firebase
+- Multer local storage
+- Sequelize or TypeORM
+- Any other framework or ORM not listed above
+
+---
+
+## 🧠 ARCHITECTURE RULES (MANDATORY)
+
+- Use modular architecture
+- Each module MUST have:
+  - controller
+  - service
+  - schema (validation)
+- Controllers handle request/response ONLY
+- Services handle ALL business logic
+- No database queries in controllers
+- No business logic in routes
+
+---
+
+## 📁 PROJECT STRUCTURE (BACKEND)
+
+src/
+  modules/
+    {module}/
+      {module}.controller.ts
+      {module}.service.ts
+      {module}.schema.ts
+  lib/
+    prisma.ts
+    minio.ts
+  plugins/
+  utils/
+
+---
+
+## 🔁 DRY PRINCIPLE (VERY IMPORTANT)
+
+- Never duplicate logic
+- Extract reusable logic into:
+  - utils/
+  - shared services
+- If duplication exists → refactor immediately
+
+---
+
+## ⚙️ CODING STANDARDS
+
+- Use TypeScript strictly
+- Use async/await only (no callbacks)
+- Use proper error handling (try/catch)
+- Always return consistent response format
+
+---
+
+## 🔐 VALIDATION RULES
+
+- Use Zod ONLY for validation
+- All inputs MUST be validated
+- No inline validation in controllers
+
+---
+
+## 🌐 API RULES
+
+- Use REST API only
+- Use correct HTTP methods:
+  - GET, POST, PUT, DELETE
+- Use proper status codes:
+  - 200, 201, 400, 401, 404, 500
+- All endpoints must be structured cleanly
+
+---
+
+## 🗄️ DATABASE RULES
+
+- Use Prisma ORM ONLY
+- Use PostgreSQL
+- All queries must go through service layer
+- Use transactions where necessary
+
+---
+
+## 📦 FILE STORAGE RULES (VERY IMPORTANT)
+
+- Use MinIO ONLY
+- Do NOT use local filesystem storage directly
+- All file operations must go through storage service
+
+Required functions:
+- uploadFile(file)
+- deleteFile(path)
+- getFileUrl(path)
+
+---
+
+## 🧩 MODULE DESIGN RULES
+
+Each module must:
+- Be independent
+- Follow same structure
+- Be reusable
+
+Modules:
+- room
+- customer
+- booking
+- checkin
+- pos (orders)
+- payment
+
+---
+
+## 🧠 NAMING CONVENTIONS
+
+- Variables: camelCase
+- Classes: PascalCase
+- Files: kebab-case
+- Modules: singular (booking, not bookings)
+
+---
+
+## 🔐 AUTH & SECURITY
+
+- Use JWT authentication
+- Protect admin routes
+- Validate all inputs
+- Never expose sensitive data
+
+---
+
+## 🚀 PERFORMANCE RULES
+
+- Avoid unnecessary DB queries
+- Use pagination where needed
+- Optimize queries
+- Use indexing in DB
+
+---
+
+## 🔥 FINAL RULE
+
+If any code violates these rules:
+👉 REFACTOR IMMEDIATELY to comply with this file
+
+Cursor must ALWAYS follow this file before generating code.

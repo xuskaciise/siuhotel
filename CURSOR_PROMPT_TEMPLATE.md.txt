@@ -1,0 +1,51 @@
+# CURSOR PROMPT TEMPLATE
+
+## 🧠 BASE PROMPT
+
+Always start with:
+
+"Read AI_RULES.md and SYSTEM_CONTEXT.md and follow them strictly."
+
+---
+
+## 🔧 MODULE CREATION
+
+Example:
+
+"Read AI_RULES.md and SYSTEM_CONTEXT.md.
+
+Create a booking module using Fastify + Prisma.
+
+Requirements:
+- Follow modular architecture
+- Use controller, service, schema separation
+- Validate input using Zod
+- Use clean and reusable code
+- Do not duplicate logic
+
+Files:
+- booking.controller.ts
+- booking.service.ts
+- booking.schema.ts"
+
+---
+
+## 🔁 REFACTOR PROMPT
+
+"Refactor this code to follow AI_RULES.md.
+- Remove duplication
+- Improve structure
+- Move logic to service layer"
+
+---
+
+## ⚡ DEBUG PROMPT
+
+"Fix this error following AI_RULES.md.
+Ensure code is clean and production-ready."
+
+---
+
+## 🚨 ENFORCEMENT PROMPT
+
+"If any rule is violated, fix it before continuing."
