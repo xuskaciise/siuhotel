@@ -1,5 +1,9 @@
+"use client";
+
+import Link from "next/link";
 import { Bell, ChevronRight, CircleHelp, Search } from "lucide-react";
 
+import { useStaffAuth } from "@/components/auth/staff-auth-provider";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ThemeToggle } from "@/components/dashboard/theme-toggle";
 import { cn } from "@/lib/utils";
@@ -15,9 +19,11 @@ function todayLabel(): string {
 
 export function DashboardHeader() {
   const dateLine = todayLabel();
+  const { user } = useStaffAuth();
+  const displayName = user?.fullName ?? "Staff";
 
   return (
-    <header className="space-y-4 pb-1">
+    <header className="space-y-4 pb-1 print:hidden">
       <div className="flex flex-wrap items-center justify-between gap-3 text-[0.8125rem]">
         <nav
           className="font-display flex items-center gap-1.5 font-medium text-muted-foreground"
@@ -73,27 +79,33 @@ export function DashboardHeader() {
             <CircleHelp className="size-[1.1rem]" strokeWidth={1.75} />
           </button>
           <ThemeToggle />
-          <div
+          <Link
+            href="/profile"
             className={cn(
-              "flex items-center gap-2.5 rounded-full py-1.5 pl-1.5 pr-5 ring-0",
-              "bg-[#f4f4f7] shadow-[0_1px_3px_rgba(15,23,42,0.06)] dark:bg-[rgb(255_255_255/0.08)]",
-              "dark:shadow-none",
+              "flex items-center gap-2.5 rounded-full py-1.5 pl-1.5 pr-5 ring-0 transition",
+              "bg-[#f4f4f7] shadow-[0_1px_3px_rgba(15,23,42,0.06)] hover:bg-[#eaeaea] dark:bg-[rgb(255_255_255/0.08)]",
+              "dark:shadow-none dark:hover:bg-[rgb(255_255_255/0.12)]",
             )}
           >
             <Avatar className="size-10 ring-0">
               <AvatarFallback className="bg-gradient-to-br from-[#006782] to-[#00CCFF] text-xs font-bold text-white">
-                AD
+                {displayName
+                  .split(/\s+/)
+                  .filter(Boolean)
+                  .slice(0, 2)
+                  .map((p) => p[0]?.toUpperCase() ?? "")
+                  .join("") || "?"}
               </AvatarFallback>
             </Avatar>
             <div className="hidden leading-tight sm:block">
               <p className="font-display text-[0.8125rem] font-semibold text-foreground dark:text-white">
-                Admin
+                {displayName}
               </p>
               <p className="text-[0.65rem] font-medium text-muted-foreground dark:text-white/55">
                 Profile
               </p>
             </div>
-          </div>
+          </Link>
         </div>
       </div>
     </header>

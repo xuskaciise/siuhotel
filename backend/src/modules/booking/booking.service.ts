@@ -34,6 +34,8 @@ const publicCreatedBySelect = {
 
   id: true,
 
+  username: true,
+
   email: true,
 
   fullName: true,
@@ -238,7 +240,8 @@ export async function createBooking(input: CreateBookingInput): Promise<BookingW
 
 
 
-  return prisma.$transaction(async (tx) => {
+  try {
+    return await prisma.$transaction(async (tx) => {
 
     const customer = await tx.customer.findUnique({ where: { id: input.customerId } });
 
@@ -338,15 +341,12 @@ export async function createBooking(input: CreateBookingInput): Promise<BookingW
 
     });
 
-
-
-    await tx.room.update({
-
-      where: { id: input.roomId },
-
-      data: { status: RoomStatus.OCCUPIED },
-
-    });
+    if (status === BookingStatus.CONFIRMED) {
+      await tx.room.update({
+        where: { id: input.roomId },
+        data: { status: RoomStatus.OCCUPIED },
+      });
+    }
 
 
 
@@ -358,7 +358,26 @@ export async function createBooking(input: CreateBookingInput): Promise<BookingW
 
     });
 
-  });
+    });
+  } catch (e) {
+    if (e instanceof Prisma.PrismaClientKnownRequestError) {
+      if (e.code === 'P2003') {
+        throw new AppError(
+          400,
+          'FOREIGN_KEY_VIOLATION',
+          'Customer, room, or staff reference is invalid or no longer exists.',
+        );
+      }
+      if (e.code === 'P2034') {
+        throw new AppError(
+          409,
+          'TRANSACTION_CONFLICT',
+          'Could not complete the booking because another change happened at the same time. Please try again.',
+        );
+      }
+    }
+    throw e;
+  }
 
 }
 

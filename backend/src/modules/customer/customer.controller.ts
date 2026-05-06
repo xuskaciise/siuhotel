@@ -5,6 +5,9 @@ import { sendSuccess } from '../../utils/api-response';
 import * as schemas from './customer.schema';
 
 import * as customerService from './customer.service';
+import { consumeAllMultipartFiles } from '../../utils/multipart-file';
+import * as customerImagesSchemas from './customer-images.schema';
+import * as customerImagesService from './customer-images.service';
 
 
 
@@ -66,6 +69,26 @@ export function registerCustomerRoutes(app: FastifyInstance): void {
 
     sendSuccess(reply, row);
 
+  });
+
+  app.post('/customers/:id/images', async (request, reply) => {
+    const { id } = schemas.customerIdParamsSchema.parse(request.params);
+    const files = await consumeAllMultipartFiles(request);
+    const objectPaths = await customerImagesService.uploadCustomerImages(id, files);
+    sendSuccess(reply, { objectPaths }, 201);
+  });
+
+  app.delete('/customers/:id/images', async (request, reply) => {
+    const { id } = schemas.customerIdParamsSchema.parse(request.params);
+    const body = customerImagesSchemas.customerImageBodySchema.parse(request.body);
+    const result = await customerImagesService.removeCustomerImage(id, body.objectPath);
+    sendSuccess(reply, result);
+  });
+
+  app.get('/customers/:id/storage-keys', async (request, reply) => {
+    const { id } = schemas.customerIdParamsSchema.parse(request.params);
+    const data = await customerImagesService.listCustomerStorageKeys(id);
+    sendSuccess(reply, data);
   });
 
 

@@ -6,46 +6,6 @@ const canvas = cn(
   "bg-white dark:bg-[color-mix(in_srgb,var(--card)_55%,transparent)] dark:backdrop-blur-xl",
 );
 
-export function RecentBookingsSkeleton() {
-  return (
-    <div
-      className={cn(
-        "overflow-hidden rounded-[2rem] bg-card p-6 shadow-elevation-soft dark:bg-card/95 dark:shadow-[0px_24px_60px_rgba(94,212,255,0.05)] dark:backdrop-blur-xl sm:p-8",
-      )}
-    >
-      <Skeleton className="mb-6 h-7 w-48 rounded-lg sm:h-8 sm:w-56" />
-      <div className="space-y-4">
-        <div className="grid grid-cols-5 gap-3 max-lg:hidden">
-          <Skeleton className="h-3 w-16" />
-          <Skeleton className="h-3 w-20" />
-          <Skeleton className="h-3 w-14" />
-          <Skeleton className="h-3 w-24" />
-          <Skeleton className="h-3 w-12" />
-        </div>
-        {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="flex flex-wrap items-center gap-4 border-0 py-2">
-            <div className="flex min-w-[180px] items-center gap-3">
-              <Skeleton className="size-10 shrink-0 rounded-full" />
-              <div className="space-y-2">
-                <Skeleton className="h-4 w-32" />
-                <Skeleton className="h-3 w-20" />
-              </div>
-            </div>
-            <Skeleton className="h-4 w-40 max-sm:hidden" />
-            <Skeleton className="h-6 w-20 rounded-full max-sm:hidden" />
-            <Skeleton className="h-4 w-28 max-md:hidden" />
-            <Skeleton className="ml-auto size-9 rounded-xl max-sm:ml-0" />
-          </div>
-        ))}
-      </div>
-      <div className="mt-6 flex items-center justify-between">
-        <Skeleton className="h-9 w-40 rounded-full" />
-        <Skeleton className="size-12 rounded-full" />
-      </div>
-    </div>
-  );
-}
-
 function ChartSectionSkeleton() {
   return (
     <div
@@ -146,8 +106,6 @@ export function DashboardPageSkeleton() {
         ))}
       </section>
 
-      <RecentBookingsSkeleton />
-
       <section className="grid gap-10 lg:grid-cols-2 lg:gap-12">
         <ChartSectionSkeleton />
         <StaffSectionSkeleton />
@@ -156,7 +114,7 @@ export function DashboardPageSkeleton() {
   );
 }
 
-/** Secondary routes: Bookings, Rooms, CMS, etc. */
+/** Secondary routes: Rooms, CMS, etc. */
 export function PlaceholderRouteSkeleton({ title = "Page" }: { title?: string }) {
   return (
     <div className="space-y-6">

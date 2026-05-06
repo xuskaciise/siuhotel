@@ -1,0 +1,16 @@
+node_modules
+.next
+out
+.env
+.env.*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+.git
+.github
+
+coverage
+.nyc_output
+
+*.tsbuildinfo

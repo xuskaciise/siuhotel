@@ -1,11 +1,8 @@
 import Link from "next/link";
-import { Suspense } from "react";
 import { Download } from "lucide-react";
 
-import { RecentBookingsSkeleton } from "@/components/dashboard/dashboard-skeleton";
 import { HeroStats } from "@/components/dashboard/hero-stats";
 import { OccupancyTrendsChart } from "@/components/dashboard/occupancy-trends-chart";
-import { RecentBookingsTable } from "@/components/dashboard/recent-bookings-table";
 import { StaffOnDuty } from "@/components/dashboard/staff-on-duty";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -41,23 +38,19 @@ export default function DashboardPage() {
             Export Report
           </button>
           <Link
-            href="/bookings"
+            href="/rooms"
             className={cn(
               buttonVariants({ variant: "default", size: "lg" }),
               "h-11 rounded-full border-0 bg-gradient-to-r from-[#00CCFF] to-[#0099FF] px-7 text-[0.8125rem] font-semibold text-[#0d1322]",
               "shadow-elevation-soft-md ring-0 hover:from-[#33d6ff] hover:to-[#00b4ea] dark:shadow-[0_0_36px_rgba(0,204,255,0.45)]",
             )}
           >
-            + New Booking
+            View Rooms
           </Link>
         </div>
       </div>
 
       <HeroStats />
-
-      <Suspense fallback={<RecentBookingsSkeleton />}>
-        <RecentBookingsTable />
-      </Suspense>
 
       <section className="grid gap-10 lg:grid-cols-2 lg:gap-12">
         <div className="min-h-[360px] min-w-0">

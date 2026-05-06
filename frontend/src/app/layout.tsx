@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Inter, Plus_Jakarta_Sans } from "next/font/google";
 import Script from "next/script";
 
+import { StaffAuthProvider } from "@/components/auth/staff-auth-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { THEME_STORAGE_KEY } from "@/lib/theme-constants";
 
@@ -66,7 +67,9 @@ export default function RootLayout({
         <Script id="theme-init" strategy="beforeInteractive">
           {themeInitScript}
         </Script>
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          <StaffAuthProvider>{children}</StaffAuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

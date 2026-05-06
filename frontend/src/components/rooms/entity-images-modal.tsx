@@ -1,25 +1,28 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ImageIcon, Trash2, Upload } from "lucide-react";
+import { CheckCircle2, ImageIcon, Loader2, Trash2, Upload } from "lucide-react";
 
 import { GlassModal } from "@/components/rooms/glass-modal";
 import { Button } from "@/components/ui/button";
 import {
   listRoomStorageKeysClient,
   listRoomTypeStorageKeysClient,
+  listCustomerStorageKeysClient,
   presignAssetUrlsClient,
   removeRoomImageClient,
   removeRoomTypeImageClient,
+  removeCustomerImageClient,
   uploadRoomImagesClient,
   uploadRoomTypeImagesClient,
+  uploadCustomerImagesClient,
   type UploadProgressEvent,
 } from "@/lib/api/apiService";
 import { cn } from "@/lib/utils";
 
 const acceptImages = "image/jpeg,image/png,image/webp,image/gif";
 
-type EntityVariant = "room" | "room-type";
+type EntityVariant = "room" | "room-type" | "customer";
 
 function EntityImageGallery({
   variant,
@@ -38,6 +41,7 @@ function EntityImageGallery({
   const [storageKeys, setStorageKeys] = useState<string[]>([]);
   const [storageListing, setStorageListing] = useState(false);
   const [uploadState, setUploadState] = useState<UploadProgressEvent | null>(null);
+  const [uploadPhase, setUploadPhase] = useState<"idle" | "uploading" | "finalizing" | "done">("idle");
   const [removingPath, setRemovingPath] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -59,7 +63,9 @@ function EntityImageGallery({
       const keys =
         variant === "room-type"
           ? await listRoomTypeStorageKeysClient(entityId)
-          : await listRoomStorageKeysClient(entityId);
+          : variant === "customer"
+            ? await listCustomerStorageKeysClient(entityId)
+            : await listRoomStorageKeysClient(entityId);
       setStorageKeys(keys);
     } catch {
       setStorageKeys([]);
@@ -111,11 +117,14 @@ function EntityImageGallery({
       const files = Array.from(list).filter((f) => f.type.startsWith("image/"));
       if (files.length === 0) return;
       setUploadState({ loaded: 0, total: 0, percent: 0, lengthComputable: false });
+      setUploadPhase("uploading");
       setActionError(null);
       const onProgress = (e: UploadProgressEvent) => setUploadState(e);
       try {
         if (variant === "room-type") {
           await uploadRoomTypeImagesClient(entityId, files.slice(0, 20), onProgress);
+        } else if (variant === "customer") {
+          await uploadCustomerImagesClient(entityId, files.slice(0, 20), onProgress);
         } else {
           await uploadRoomImagesClient(entityId, files.slice(0, 20), onProgress);
         }
@@ -124,11 +133,17 @@ function EntityImageGallery({
             ? { ...prev, percent: 100 }
             : { loaded: prev?.loaded ?? 0, total: prev?.total ?? 0, percent: 100, lengthComputable: true },
         );
+        setUploadPhase("finalizing");
         await refreshAfterChange();
+        setUploadPhase("done");
       } catch (e) {
         setActionError(e instanceof Error ? e.message : "Upload failed.");
       } finally {
-        setUploadState(null);
+        // Keep the final 100% / done state visible briefly.
+        window.setTimeout(() => {
+          setUploadState(null);
+          setUploadPhase("idle");
+        }, 900);
         if (inputRef.current) inputRef.current.value = "";
       }
     },
@@ -143,6 +158,8 @@ function EntityImageGallery({
       try {
         if (variant === "room-type") {
           await removeRoomTypeImageClient(entityId, objectPath);
+        } else if (variant === "customer") {
+          await removeCustomerImageClient(entityId, objectPath);
         } else {
           await removeRoomImageClient(entityId, objectPath);
         }
@@ -164,7 +181,11 @@ function EntityImageGallery({
         Gallery merges the <strong className="text-foreground/90 dark:text-white/90">catalog</strong> (
         {dbPaths.length} in database) with whatever already exists under this folder in MinIO (
         <span className="font-mono text-[0.75rem]">hotel-pos-assets</span>
-        {variant === "room-type" ? ` / room-types / ${entityId}` : ` / rooms / ${entityId}`}). JPEG,
+        {variant === "room-type"
+          ? ` / room-types / ${entityId}`
+          : variant === "customer"
+            ? ` / customers / ${entityId}`
+            : ` / rooms / ${entityId}`}). JPEG,
         PNG, WebP, or GIF; up to 20 files per upload.
       </p>
 
@@ -214,7 +235,18 @@ function EntityImageGallery({
             aria-live="polite"
           >
             <div className="mb-2 flex items-baseline justify-between gap-3 text-[0.8125rem]">
-              <span className="font-semibold text-foreground dark:text-white">Upload progress</span>
+              <span className="flex items-center gap-2 font-semibold text-foreground dark:text-white">
+                {uploadPhase === "finalizing" ? (
+                  <Loader2 className="size-4 animate-spin" strokeWidth={1.75} aria-hidden="true" />
+                ) : uploadPhase === "done" ? (
+                  <CheckCircle2 className="size-4 text-emerald-600 dark:text-emerald-300" strokeWidth={1.75} aria-hidden="true" />
+                ) : null}
+                {uploadPhase === "finalizing"
+                  ? "Finalizing…"
+                  : uploadPhase === "done"
+                    ? "Upload complete"
+                    : "Upload progress"}
+              </span>
               <span className="tabular-nums font-bold text-primary dark:text-[#9de2ff]">
                 {uploadState.lengthComputable
                   ? `${uploadState.percent}%`

@@ -1,14 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Download, LayoutGrid, List, Pencil, Plus, Trash2 } from "lucide-react";
+import { BadgeDollarSign, ClipboardSignature, Download, LayoutGrid, List, Pencil, Plus, Trash2 } from "lucide-react";
 
 import { EntityImagesModal, EntityImagesTriggerButton } from "@/components/rooms/entity-images-modal";
 import { GlassModal } from "@/components/rooms/glass-modal";
 import { RoomStatusBadge } from "@/components/rooms/room-status-badge";
 import { Button } from "@/components/ui/button";
+import { Pagination } from "@/components/ui/pagination";
 import {
   createRoomClient,
   deleteRoomClient,
@@ -21,6 +21,8 @@ import {
   type RoomTypeDto,
   type RoomWithTypeDto,
 } from "@/lib/api/apiService";
+import { paginateArray } from "@/lib/pagination";
+import { useUrlPagination } from "@/lib/use-url-pagination";
 import { cn } from "@/lib/utils";
 
 const fieldClass = cn(
@@ -229,7 +231,10 @@ function LuminaRoomCard({
             </p>
           </div>
           <p className="shrink-0 text-right">
-            <span className="font-display text-lg font-bold text-primary dark:text-[#9de2ff]">{price}</span>
+            <span className="inline-flex items-center justify-end gap-1.5 font-display text-lg font-bold text-primary dark:text-[#9de2ff]">
+              <BadgeDollarSign className="size-4 opacity-80" strokeWidth={1.75} aria-hidden="true" />
+              {price}
+            </span>
             <span className="block text-[0.65rem] font-semibold uppercase tracking-wide text-muted-foreground dark:text-[#8a97a8]">
               per night
             </span>
@@ -242,6 +247,14 @@ function LuminaRoomCard({
           <p className="text-sm italic text-muted-foreground/70 dark:text-[#6b7585]">No category description.</p>
         )}
 
+        <p className="text-[0.65rem] font-medium text-muted-foreground dark:text-[#8a97a8]">
+          <span className="inline-flex items-center gap-1.5 font-semibold uppercase tracking-wide">
+            <ClipboardSignature className="size-3.5 opacity-80" strokeWidth={1.75} aria-hidden="true" />
+            Created by
+          </span>{" "}
+          <span className="text-foreground/80 dark:text-white/70">{room.createdBy?.fullName ?? "—"}</span>
+        </p>
+
         {room.status === "OCCUPIED" ? (
           <div
             className={cn(
@@ -251,7 +264,7 @@ function LuminaRoomCard({
           >
             <span className="font-semibold text-foreground dark:text-white">Guest in house</span>
             <span className="mt-1 block text-[0.8125rem] text-muted-foreground dark:text-[#9aa8bc]">
-              Manage booking from Reservations to see checkout times.
+              Occupied room — manage guest details in the relevant module.
             </span>
           </div>
         ) : null}
@@ -280,29 +293,7 @@ function LuminaRoomCard({
           >
             Details
           </Button>
-          {room.status === "AVAILABLE" ? (
-            <Link
-              href="/bookings"
-              className={cn(
-                "inline-flex h-10 flex-1 items-center justify-center rounded-full text-[0.75rem] font-bold uppercase tracking-wide ring-0",
-                "bg-gradient-to-r from-[#0d1322] to-[#1a2744] text-white shadow-[0_8px_28px_rgb(13_19_34/0.25)]",
-                "hover:from-[#1a2744] hover:to-[#243352] dark:from-[#00CCFF] dark:to-[#0099FF] dark:text-[#0d1322] dark:shadow-[0_8px_28px_rgb(0_204_255/0.35)]",
-              )}
-            >
-              Book room
-            </Link>
-          ) : room.status === "OCCUPIED" ? (
-            <Link
-              href="/bookings"
-              className={cn(
-                "inline-flex h-10 flex-[2] min-w-[8rem] items-center justify-center rounded-full text-[0.75rem] font-bold uppercase tracking-wide ring-0",
-                "bg-gradient-to-r from-[#0d1322] to-[#1a2744] text-white shadow-[0_8px_28px_rgb(13_19_34/0.25)]",
-                "hover:from-[#1a2744] hover:to-[#243352] dark:from-[#a78bfa] dark:to-[#7c3aed] dark:text-white",
-              )}
-            >
-              Manage guest
-            </Link>
-          ) : (
+          {room.status === "MAINTENANCE" ? (
             <Button
               type="button"
               onClick={onEdit}
@@ -313,7 +304,7 @@ function LuminaRoomCard({
             >
               Notify housekeeping
             </Button>
-          )}
+          ) : null}
           <div className="flex w-full gap-2 sm:w-auto sm:flex-initial">
             <EntityImagesTriggerButton onClick={onPhotos} />
           </div>
@@ -355,7 +346,18 @@ function LuminaRoomListRow({
       <div className="min-w-0 flex-1">
         <p className="font-display text-base font-bold text-foreground dark:text-white">{room.roomType.name}</p>
         <p className="mt-1 text-sm text-muted-foreground dark:text-[#a8b4c4]">
-          {formatMoneyFromDecimalString(room.roomType.basePrice)} / night · {display}
+          <span className="inline-flex items-center gap-1.5">
+            <BadgeDollarSign className="size-4 opacity-80" strokeWidth={1.75} aria-hidden="true" />
+            {formatMoneyFromDecimalString(room.roomType.basePrice)} / night
+          </span>{" "}
+          · {display}
+        </p>
+        <p className="mt-1 text-[0.65rem] text-muted-foreground dark:text-[#8a97a8]">
+          <span className="inline-flex items-center gap-1.5 font-semibold uppercase tracking-wide">
+            <ClipboardSignature className="size-3.5 opacity-80" strokeWidth={1.75} aria-hidden="true" />
+            Created by
+          </span>{" "}
+          <span className="text-foreground/80 dark:text-white/70">{room.createdBy?.fullName ?? "—"}</span>
         </p>
       </div>
       <div className="flex w-full shrink-0 flex-wrap gap-2 sm:w-auto sm:justify-end">
@@ -397,6 +399,8 @@ export function RoomsInventoryClient({
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(loadError);
+  const pageSize = viewMode === "grid" ? 9 : 10;
+  const { state: paging, setPage, reset: resetPage } = useUrlPagination({ pageSize, pageParam: "page" });
 
   const [addOpen, setAddOpen] = useState(false);
   const [roomNumber, setRoomNumber] = useState("");
@@ -425,6 +429,10 @@ export function RoomsInventoryClient({
     if (!q.status && !q.roomTypeId) return undefined;
     return q;
   }, [statusFilter, typeFilter]);
+
+  useEffect(() => {
+    resetPage();
+  }, [statusFilter, typeFilter, viewMode, resetPage]);
 
   const refreshStats = useCallback(async () => {
     try {
@@ -507,6 +515,8 @@ export function RoomsInventoryClient({
       cancelled = true;
     };
   }, [coverPaths.join("|")]);
+
+  const { items: pagedRooms, meta } = useMemo(() => paginateArray(rooms, paging), [rooms, paging]);
 
   const stats = useMemo(() => {
     const total = statsRooms.length;
@@ -795,7 +805,7 @@ export function RoomsInventoryClient({
 
       {viewMode === "grid" ? (
         <div className="grid gap-7 sm:grid-cols-2 xl:grid-cols-3">
-          {rooms.map((room) => {
+          {pagedRooms.map((room) => {
             const key = room.images[0];
             const cover = key ? coverByPath[key] : undefined;
             return (
@@ -815,7 +825,7 @@ export function RoomsInventoryClient({
         </div>
       ) : (
         <div className="flex flex-col gap-3">
-          {rooms.map((room) => {
+          {pagedRooms.map((room) => {
             const key = room.images[0];
             const cover = key ? coverByPath[key] : undefined;
             return (
@@ -839,6 +849,16 @@ export function RoomsInventoryClient({
         <p className="text-center text-sm text-muted-foreground dark:text-[#9aa8bc]">
           No rooms match these filters yet.
         </p>
+      ) : null}
+
+      {rooms.length > 0 ? (
+        <Pagination
+          page={meta.page}
+          totalPages={meta.totalPages}
+          totalItems={meta.totalItems}
+          pageSize={meta.pageSize}
+          onPageChange={(p) => setPage(p, meta.totalItems)}
+        />
       ) : null}
 
       <EntityImagesModal
@@ -952,7 +972,7 @@ export function RoomsInventoryClient({
         title="Delete room?"
         description={
           deleteTarget
-            ? `Permanently remove room ${deleteTarget.roomNumber} (${deleteTarget.roomType.name}), its catalog entry, and MinIO files under this room’s folder. This cannot be undone. Rooms with existing bookings cannot be deleted.`
+            ? `Permanently remove room ${deleteTarget.roomNumber} (${deleteTarget.roomType.name}), its catalog entry, and MinIO files under this room’s folder. This cannot be undone. Deletion may fail if related records exist.`
             : undefined
         }
         footer={

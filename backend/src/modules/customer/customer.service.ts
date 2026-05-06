@@ -26,6 +26,28 @@ function isPrismaKnownError(err: unknown): err is { code: string } {
 
 
 
+/** Prisma `meta.target` for P2002 (string or string[] depending on version). */
+
+function prismaUniqueTargetText(err: unknown): string {
+
+  if (!(err instanceof Prisma.PrismaClientKnownRequestError) || err.code !== 'P2002') {
+
+    return '';
+
+  }
+
+  const raw = err.meta?.target;
+
+  if (typeof raw === 'string') return raw;
+
+  if (Array.isArray(raw)) return raw.join(' ');
+
+  return '';
+
+}
+
+
+
 export type PublicCustomer = Omit<Customer, 'passwordHash'>;
 
 
@@ -59,6 +81,14 @@ export async function createWalkInCustomer(input: CreateWalkInCustomerInput): Pr
   } catch (err) {
 
     if (isPrismaKnownError(err) && err.code === 'P2002') {
+
+      const target = prismaUniqueTargetText(err).toLowerCase();
+
+      if (target.includes('email')) {
+
+        throw new AppError(409, 'EMAIL_TAKEN', 'A customer with this email already exists');
+
+      }
 
       throw new AppError(409, 'PHONE_NUMBER_TAKEN', 'A customer with this phone number already exists');
 
@@ -102,9 +132,7 @@ export async function registerAppCustomer(input: RegisterCustomerInput): Promise
 
     if (isPrismaKnownError(err) && err.code === 'P2002') {
 
-      const meta = err as { meta?: { target?: string[] } };
-
-      const target = meta.meta?.target?.join(' ') ?? '';
+      const target = prismaUniqueTargetText(err).toLowerCase();
 
       if (target.includes('email')) {
 
@@ -212,9 +240,7 @@ export async function updateCustomer(id: string, input: UpdateCustomerInput): Pr
 
     if (isPrismaKnownError(err) && err.code === 'P2002') {
 
-      const meta = err as { meta?: { target?: string[] } };
-
-      const target = meta.meta?.target?.join(' ') ?? '';
+      const target = prismaUniqueTargetText(err).toLowerCase();
 
       if (target.includes('email')) {
 
@@ -222,7 +248,13 @@ export async function updateCustomer(id: string, input: UpdateCustomerInput): Pr
 
       }
 
-      throw new AppError(409, 'PHONE_NUMBER_TAKEN', 'A customer with this phone number already exists');
+      if (target.includes('phone')) {
+
+        throw new AppError(409, 'PHONE_NUMBER_TAKEN', 'A customer with this phone number already exists');
+
+      }
+
+      throw new AppError(409, 'DUPLICATE_FIELD', 'This update conflicts with an existing record.');
 
     }
 

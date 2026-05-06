@@ -1,18 +1,21 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Pencil, Plus } from "lucide-react";
+import { BadgeDollarSign, ClipboardSignature, Pencil, Plus } from "lucide-react";
 
 import { EntityImagesModal, EntityImagesTriggerButton } from "@/components/rooms/entity-images-modal";
 import { GlassModal } from "@/components/rooms/glass-modal";
 import { Button } from "@/components/ui/button";
+import { Pagination } from "@/components/ui/pagination";
 import {
   createRoomTypeClient,
   fetchRoomTypesClient,
   updateRoomTypeClient,
   type RoomTypeDto,
 } from "@/lib/api/apiService";
+import { paginateArray } from "@/lib/pagination";
+import { useUrlPagination } from "@/lib/use-url-pagination";
 import { cn } from "@/lib/utils";
 
 const fieldClass = cn(
@@ -44,6 +47,8 @@ export function RoomTypesClient({ initialTypes, loadError }: RoomTypesClientProp
   const router = useRouter();
   const [types, setTypes] = useState<RoomTypeDto[]>(initialTypes);
   const [error, setError] = useState<string | null>(loadError);
+  const pageSize = 9;
+  const { state: paging, setPage, reset: resetPage } = useUrlPagination({ pageSize, pageParam: "page" });
 
   const [addOpen, setAddOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -60,16 +65,20 @@ export function RoomTypesClient({ initialTypes, loadError }: RoomTypesClientProp
     setTypes(initialTypes);
   }, [initialTypes]);
 
+  const sortedTypes = useMemo(() => [...types].sort((a, b) => a.name.localeCompare(b.name)), [types]);
+  const { items: pagedTypes, meta } = useMemo(() => paginateArray(sortedTypes, paging), [sortedTypes, paging]);
+
   const reload = useCallback(async () => {
     setError(null);
     try {
       const data = await fetchRoomTypesClient();
       setTypes(data);
       router.refresh();
+      resetPage();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not load room types.");
     }
-  }, [router]);
+  }, [router, resetPage]);
 
   function openAdd() {
     setEditingId(null);
@@ -169,7 +178,7 @@ export function RoomTypesClient({ initialTypes, loadError }: RoomTypesClientProp
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {types.map((t) => (
+        {pagedTypes.map((t) => (
           <article
             key={t.id}
             className={cn(
@@ -189,7 +198,8 @@ export function RoomTypesClient({ initialTypes, loadError }: RoomTypesClientProp
                   <h2 className="font-display text-xl font-bold tracking-tight text-foreground dark:text-white">
                     {t.name}
                   </h2>
-                  <p className="mt-2 text-2xl font-semibold tabular-nums text-primary dark:text-[#9de2ff]">
+                  <p className="mt-2 flex items-center gap-2 text-2xl font-semibold tabular-nums text-primary dark:text-[#9de2ff]">
+                    <BadgeDollarSign className="size-5 opacity-80" strokeWidth={1.75} aria-hidden="true" />
                     {formatMoneyFromDecimalString(t.basePrice)}
                   </p>
                 </div>
@@ -220,6 +230,15 @@ export function RoomTypesClient({ initialTypes, loadError }: RoomTypesClientProp
                   No description yet.
                 </p>
               )}
+              <p className="mt-3 text-[0.65rem] font-medium leading-snug text-muted-foreground dark:text-[#8a97a8]">
+                <span className="inline-flex items-center gap-1.5 font-bold uppercase tracking-wide">
+                  <ClipboardSignature className="size-3.5 opacity-80" strokeWidth={1.75} aria-hidden="true" />
+                  Created by
+                </span>{" "}
+                <span className="text-foreground/85 dark:text-white/75">
+                  {t.createdBy?.fullName ?? "—"}
+                </span>
+              </p>
             </div>
           </article>
         ))}
@@ -229,6 +248,16 @@ export function RoomTypesClient({ initialTypes, loadError }: RoomTypesClientProp
         <p className="text-center text-sm text-muted-foreground dark:text-[#9aa8bc]">
           No room categories yet. Add a deluxe suite, penthouse, or standard tier to begin.
         </p>
+      ) : null}
+
+      {types.length > 0 ? (
+        <Pagination
+          page={meta.page}
+          totalPages={meta.totalPages}
+          totalItems={meta.totalItems}
+          pageSize={meta.pageSize}
+          onPageChange={(p) => setPage(p, meta.totalItems)}
+        />
       ) : null}
 
       <EntityImagesModal

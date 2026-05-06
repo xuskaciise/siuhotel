@@ -73,6 +73,8 @@ model RoomType {
   description String?
   images      String[] @default([])
   rooms       Room[]
+  createdById String?  @map("created_by")
+  createdBy   User?    @relation("RoomTypeCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -80,29 +82,36 @@ model RoomType {
 }
 
 model Room {
-  id         String     @id @default(cuid())
+  id          String     @id @default(cuid())
   roomNumber String     @unique @map("room_number")
-  status     RoomStatus @default(AVAILABLE)
-  roomTypeId String     @map("room_type_id")
-  roomType   RoomType   @relation(fields: [roomTypeId], references: [id], onDelete: Restrict)
-  images     String[]   @default([])
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
-  bookings   Booking[]
+  status      RoomStatus @default(AVAILABLE)
+  roomTypeId  String     @map("room_type_id")
+  roomType    RoomType   @relation(fields: [roomTypeId], references: [id], onDelete: Restrict)
+  images      String[]   @default([])
+  createdById String?    @map("created_by")
+  createdBy   User?      @relation("RoomCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  bookings    Booking[]
 
   @@map("rooms")
 }
 
 model User {
-  id               String    @id @default(cuid())
-  email            String    @unique
-  passwordHash     String    @map("password_hash")
-  fullName         String    @map("full_name")
-  roleId           String    @map("role_id")
-  role             Role      @relation(fields: [roleId], references: [id], onDelete: Restrict)
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-  bookingsCreated  Booking[] @relation("BookingCreatedBy")
+  id               String     @id @default(cuid())
+  username         String     @unique
+  email            String?    @unique
+  passwordHash     String     @map("password_hash")
+  fullName         String     @map("full_name")
+  profileImage     String?    @map("profile_image")
+  isActive         Boolean    @default(true) @map("is_active")
+  roleId           String     @map("role_id")
+  role             Role       @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+  bookingsCreated  Booking[]  @relation("BookingCreatedBy")
+  roomTypesCreated RoomType[] @relation("RoomTypeCreatedBy")
+  roomsCreated     Room[]     @relation("RoomCreatedBy")
 
   @@map("users")
 }

@@ -10,11 +10,11 @@ export function assertAllowedAssetObjectPath(objectPath: string): void {
   if (objectPath.includes('..') || objectPath.includes('//') || objectPath.startsWith('/')) {
     throw new AppError(400, 'INVALID_OBJECT_PATH', 'Invalid object path');
   }
-  if (!/^(rooms|room-types)\/[^/]+\/.+$/i.test(objectPath)) {
+  if (!/^(rooms|room-types|customers|users)\/[^/]+\/.+$/i.test(objectPath)) {
     throw new AppError(
       400,
       'INVALID_OBJECT_PATH',
-      'Path must look like rooms/{id}/... or room-types/{id}/...',
+      'Path must look like rooms/{id}/..., room-types/{id}/..., or customers/{id}/...',
     );
   }
 }

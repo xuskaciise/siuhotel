@@ -1,13 +1,26 @@
-import type { FastifyInstance } from 'fastify';
+import type { FastifyInstance, FastifyRequest } from 'fastify';
+import { AppError } from '../../lib/app-error';
 import { sendSuccess } from '../../utils/api-response';
 import { consumeAllMultipartFiles } from '../../utils/multipart-file';
 import * as schemas from './room.schema';
 import * as roomService from './room.service';
 
+async function requireJwtStaff(request: FastifyRequest): Promise<void> {
+  try {
+    await request.jwtVerify();
+  } catch {
+    throw new AppError(401, 'UNAUTHORIZED', 'Staff login required');
+  }
+}
+
+function staffUserId(request: FastifyRequest): string {
+  return (request.user as { sub: string }).sub;
+}
+
 export function registerRoomRoutes(app: FastifyInstance): void {
-  app.post('/room-types', async (request, reply) => {
+  app.post('/room-types', { preHandler: requireJwtStaff }, async (request, reply) => {
     const body = schemas.createRoomTypeBodySchema.parse(request.body);
-    const row = await roomService.createRoomType(body);
+    const row = await roomService.createRoomType(body, staffUserId(request));
     sendSuccess(reply, roomService.formatRoomTypeResponse(row), 201);
   });
 
@@ -49,9 +62,9 @@ export function registerRoomRoutes(app: FastifyInstance): void {
     sendSuccess(reply, roomService.formatRoomTypeResponse(row));
   });
 
-  app.post('/rooms', async (request, reply) => {
+  app.post('/rooms', { preHandler: requireJwtStaff }, async (request, reply) => {
     const body = schemas.createRoomBodySchema.parse(request.body);
-    const row = await roomService.createRoom(body);
+    const row = await roomService.createRoom(body, staffUserId(request));
     sendSuccess(reply, roomService.formatRoomWithTypeResponse(row), 201);
   });
 

@@ -68,6 +68,14 @@ export const listRoomsQuerySchema = z.object({
     (v) => queryEmptyToUndefined(firstQueryValue(v)),
     z.string().min(1).optional(),
   ),
+  checkIn: z.preprocess(
+    (v) => queryEmptyToUndefined(firstQueryValue(v)),
+    z.coerce.date().optional(),
+  ),
+  checkOut: z.preprocess(
+    (v) => queryEmptyToUndefined(firstQueryValue(v)),
+    z.coerce.date().optional(),
+  ),
 });
 
 export const roomIdParamsSchema = z.object({

@@ -3,7 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "db:push": "npm --prefix ../backend run db:push",
+    "db:generate": "npm --prefix ../backend run db:generate",
+    "db:migrate": "npm --prefix ../backend run db:migrate",
+    "db:seed": "npm --prefix ../backend run db:seed",
+    "clean:dev": "node -e \"require('fs').rmSync('.next',{recursive:true,force:true});\"",
     "dev": "next dev -p 3001",
+    "dev:fresh": "npm run clean:dev && npm run dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"

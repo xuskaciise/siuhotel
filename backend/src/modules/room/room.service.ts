@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import { Prisma, type Room, type RoomType, RoomStatus } from '@prisma/client';
+import { Prisma, RoomStatus } from '@prisma/client';
 import { prisma } from '../../lib/prisma';
 import { listObjectKeys, uploadFile, deleteFile } from '../../lib/minio';
 import { AppError } from '../../lib/app-error';
@@ -22,30 +22,93 @@ const ALLOWED_IMAGE_MIME = new Set([
   'image/gif',
 ]);
 
-export type RoomWithType = Room & { roomType: RoomType };
+const roomCreatorSelect = {
+  id: true,
+  username: true,
+  email: true,
+  fullName: true,
+} as const;
 
-export type RoomTypeResponse = Omit<RoomType, 'basePrice'> & { basePrice: string };
+export type RoomCreatorRow = Prisma.UserGetPayload<{ select: typeof roomCreatorSelect }> | null;
 
-export type RoomWithTypeResponse = Omit<RoomWithType, 'roomType'> & {
-  roomType: RoomTypeResponse;
+const roomTypeCreatorInclude = {
+  createdBy: { select: roomCreatorSelect },
+} as const;
+
+export type RoomTypeWithCreator = Prisma.RoomTypeGetPayload<{ include: typeof roomTypeCreatorInclude }>;
+
+const roomWithRelationsInclude = {
+  roomType: { include: { createdBy: { select: roomCreatorSelect } } },
+  createdBy: { select: roomCreatorSelect },
+} as const;
+
+export type RoomWithType = Prisma.RoomGetPayload<{ include: typeof roomWithRelationsInclude }>;
+
+export type RoomCreatorDto = {
+  id: string;
+  username: string;
+  email: string | null;
+  fullName: string;
 };
 
-function formatRoomType(row: RoomType): RoomTypeResponse {
+export type RoomTypeResponse = {
+  id: string;
+  name: string;
+  basePrice: string;
+  description: string | null;
+  images: string[];
+  createdAt: Date;
+  updatedAt: Date;
+  createdBy: RoomCreatorDto | null;
+};
+
+export type RoomWithTypeResponse = {
+  id: string;
+  roomNumber: string;
+  status: RoomStatus;
+  roomTypeId: string;
+  images: string[];
+  createdAt: Date;
+  updatedAt: Date;
+  roomType: RoomTypeResponse;
+  createdBy: RoomCreatorDto | null;
+};
+
+function formatCreator(c: RoomCreatorRow | null | undefined): RoomCreatorDto | null {
+  if (c === null || c === undefined) {
+    return null;
+  }
+  return { id: c.id, username: c.username, email: c.email, fullName: c.fullName };
+}
+
+function formatRoomType(row: RoomTypeWithCreator): RoomTypeResponse {
   return {
-    ...row,
+    id: row.id,
+    name: row.name,
     basePrice: row.basePrice.toFixed(2),
+    description: row.description,
+    images: row.images,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+    createdBy: formatCreator(row.createdBy),
   };
 }
 
-export function formatRoomTypeResponse(row: RoomType): RoomTypeResponse {
+export function formatRoomTypeResponse(row: RoomTypeWithCreator): RoomTypeResponse {
   return formatRoomType(row);
 }
 
 export function formatRoomWithTypeResponse(row: RoomWithType): RoomWithTypeResponse {
-  const { roomType, ...rest } = row;
   return {
-    ...rest,
-    roomType: formatRoomType(roomType),
+    id: row.id,
+    roomNumber: row.roomNumber,
+    status: row.status,
+    roomTypeId: row.roomTypeId,
+    images: row.images,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+    roomType: formatRoomType(row.roomType),
+    createdBy: formatCreator(row.createdBy),
   };
 }
 
@@ -53,7 +116,7 @@ export function formatRoomWithTypeListResponse(rows: RoomWithType[]): RoomWithTy
   return rows.map(formatRoomWithTypeResponse);
 }
 
-export function formatRoomTypeListResponse(rows: RoomType[]): RoomTypeResponse[] {
+export function formatRoomTypeListResponse(rows: RoomTypeWithCreator[]): RoomTypeResponse[] {
   return rows.map(formatRoomType);
 }
 
@@ -75,9 +138,7 @@ function mapRoomStatus(status: CreateRoomInput['status']): RoomStatus {
   return status as RoomStatus;
 }
 
-function mapRoomStatusOptional(
-  status: NonNullable<UpdateRoomInput['status']>,
-): RoomStatus {
+function mapRoomStatusOptional(status: NonNullable<UpdateRoomInput['status']>): RoomStatus {
   return status as RoomStatus;
 }
 
@@ -98,26 +159,37 @@ function validateImageMime(contentType: string | undefined): string {
 
 // --- Room types ---
 
-export async function createRoomType(input: CreateRoomTypeInput): Promise<RoomType> {
+export async function createRoomType(
+  input: CreateRoomTypeInput,
+  createdByUserId: string,
+): Promise<RoomTypeWithCreator> {
   const data: Prisma.RoomTypeCreateInput = {
     name: input.name,
     basePrice: new Prisma.Decimal(input.basePrice),
     images: input.images ?? [],
+    createdBy: { connect: { id: createdByUserId } },
   };
   if (input.description !== undefined) {
     data.description = input.description;
   }
-  return prisma.roomType.create({ data });
-}
-
-export async function listRoomTypes(): Promise<RoomType[]> {
-  return prisma.roomType.findMany({
-    orderBy: { name: 'asc' },
+  return prisma.roomType.create({
+    data,
+    include: roomTypeCreatorInclude,
   });
 }
 
-export async function getRoomTypeById(id: string): Promise<RoomType> {
-  const row = await prisma.roomType.findUnique({ where: { id } });
+export async function listRoomTypes(): Promise<RoomTypeWithCreator[]> {
+  return prisma.roomType.findMany({
+    orderBy: { name: 'asc' },
+    include: roomTypeCreatorInclude,
+  });
+}
+
+export async function getRoomTypeById(id: string): Promise<RoomTypeWithCreator> {
+  const row = await prisma.roomType.findUnique({
+    where: { id },
+    include: roomTypeCreatorInclude,
+  });
   if (row === null) {
     throw new AppError(404, 'ROOM_TYPE_NOT_FOUND', 'Room type not found');
   }
@@ -127,7 +199,7 @@ export async function getRoomTypeById(id: string): Promise<RoomType> {
 export async function updateRoomType(
   id: string,
   input: UpdateRoomTypeInput,
-): Promise<RoomType> {
+): Promise<RoomTypeWithCreator> {
   await getRoomTypeById(id);
   const data: Prisma.RoomTypeUpdateInput = {};
   if (input.name !== undefined) {
@@ -142,6 +214,7 @@ export async function updateRoomType(
   return prisma.roomType.update({
     where: { id },
     data,
+    include: roomTypeCreatorInclude,
   });
 }
 
@@ -193,7 +266,7 @@ export async function listRoomObjectKeysInStorage(roomId: string): Promise<strin
 export async function removeRoomTypeImage(
   roomTypeId: string,
   objectPath: string,
-): Promise<RoomType> {
+): Promise<RoomTypeWithCreator> {
   const row = await getRoomTypeById(roomTypeId);
   if (!row.images.includes(objectPath)) {
     throw new AppError(
@@ -206,22 +279,27 @@ export async function removeRoomTypeImage(
   return prisma.roomType.update({
     where: { id: roomTypeId },
     data: { images: { set: row.images.filter((p) => p !== objectPath) } },
+    include: roomTypeCreatorInclude,
   });
 }
 
 // --- Rooms ---
 
-export async function createRoom(input: CreateRoomInput): Promise<RoomWithType> {
+export async function createRoom(
+  input: CreateRoomInput,
+  createdByUserId: string,
+): Promise<RoomWithType> {
   const data: Prisma.RoomUncheckedCreateInput = {
     roomNumber: input.roomNumber,
     roomTypeId: input.roomTypeId,
     status: mapRoomStatus(input.status),
     images: input.images ?? [],
+    createdById: createdByUserId,
   };
   try {
     return await prisma.room.create({
       data,
-      include: { roomType: true },
+      include: roomWithRelationsInclude,
     });
   } catch (err) {
     if (isPrismaKnownError(err) && err.code === 'P2002') {
@@ -242,9 +320,29 @@ export async function listRooms(query: ListRoomsQuery): Promise<RoomWithType[]> 
   if (query.roomTypeId !== undefined) {
     where.roomTypeId = query.roomTypeId;
   }
+  if (query.checkIn !== undefined || query.checkOut !== undefined) {
+    if (query.checkIn === undefined || query.checkOut === undefined) {
+      throw new AppError(400, 'VALIDATION_ERROR', 'Provide both checkIn and checkOut to filter unbooked rooms.');
+    }
+    const checkIn = query.checkIn;
+    const checkOut = query.checkOut;
+    if (checkOut.getTime() <= checkIn.getTime()) {
+      throw new AppError(400, 'VALIDATION_ERROR', 'checkOut must be after checkIn');
+    }
+    /** Match `createBooking`: only physically available rooms can be booked for these dates. */
+    if (query.status === undefined) {
+      where.status = RoomStatus.AVAILABLE;
+    }
+    where.bookings = {
+      none: {
+        status: { in: ['PENDING', 'CONFIRMED'] },
+        AND: [{ checkOut: { gt: checkIn } }, { checkIn: { lt: checkOut } }],
+      },
+    };
+  }
   return prisma.room.findMany({
     where,
-    include: { roomType: true },
+    include: roomWithRelationsInclude,
     orderBy: { roomNumber: 'asc' },
   });
 }
@@ -252,7 +350,7 @@ export async function listRooms(query: ListRoomsQuery): Promise<RoomWithType[]> 
 export async function getRoomById(id: string): Promise<RoomWithType> {
   const row = await prisma.room.findUnique({
     where: { id },
-    include: { roomType: true },
+    include: roomWithRelationsInclude,
   });
   if (row === null) {
     throw new AppError(404, 'ROOM_NOT_FOUND', 'Room not found');
@@ -279,7 +377,7 @@ export async function updateRoom(id: string, input: UpdateRoomInput): Promise<Ro
     return await prisma.room.update({
       where: { id },
       data,
-      include: { roomType: true },
+      include: roomWithRelationsInclude,
     });
   } catch (err) {
     if (isPrismaKnownError(err) && err.code === 'P2002') {
@@ -336,7 +434,7 @@ export async function removeRoomImage(roomId: string, objectPath: string): Promi
   return prisma.room.update({
     where: { id: roomId },
     data: { images: { set: row.images.filter((p) => p !== objectPath) } },
-    include: { roomType: true },
+    include: roomWithRelationsInclude,
   });
 }
 

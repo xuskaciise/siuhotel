@@ -135,12 +135,57 @@ export function registerGlobalErrorHandler(app: FastifyInstance): void {
             details,
           );
           return;
+        case 'P2002':
+          sendError(
+            reply,
+            409,
+            'UNIQUE_CONSTRAINT_VIOLATION',
+            'This value already exists in the database (for example a duplicate email or phone).',
+            details,
+          );
+          return;
+        case 'P2003':
+          sendError(
+            reply,
+            400,
+            'FOREIGN_KEY_VIOLATION',
+            'A related record is missing or could not be linked (for example an invalid room or customer id).',
+            details,
+          );
+          return;
+        case 'P2034':
+          sendError(
+            reply,
+            409,
+            'TRANSACTION_CONFLICT',
+            'This change conflicted with another update. Please try again.',
+            details,
+          );
+          return;
+        case 'P2025':
+          sendError(
+            reply,
+            404,
+            'RECORD_NOT_FOUND',
+            'The requested record was not found in the database.',
+            details,
+          );
+          return;
+        case 'P2011':
+          sendError(
+            reply,
+            400,
+            'NULL_CONSTRAINT_VIOLATION',
+            'A required value was missing for this operation.',
+            details,
+          );
+          return;
         default:
           sendError(
             reply,
             500,
             'DATABASE_REQUEST_ERROR',
-            'A database error occurred while processing this request.',
+            `A database error occurred (${error.code}). Please try again; if it keeps happening, contact support.`,
             details,
           );
           return;

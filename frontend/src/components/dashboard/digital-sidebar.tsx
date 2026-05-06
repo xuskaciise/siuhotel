@@ -2,35 +2,56 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   BedDouble,
   Briefcase,
-  CalendarDays,
+  CalendarRange,
   Globe,
   LayoutGrid,
+  LogOut,
+  UserCircle2,
   Users,
 } from "lucide-react";
 
+import { useStaffAuth } from "@/components/auth/staff-auth-provider";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+
+function staffInitials(fullName: string): string {
+  const parts = fullName.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0]!.slice(0, 2).toUpperCase();
+  const a = parts[0]![0] ?? "";
+  const b = parts[parts.length - 1]![0] ?? "";
+  const s = (a + b).toUpperCase();
+  return s.length > 0 ? s : "?";
+}
 
 const nav = [
   { href: "/", label: "Dashboard", icon: LayoutGrid },
-  { href: "/bookings", label: "Bookings", icon: CalendarDays },
+  { href: "/bookings", label: "Bookings", icon: CalendarRange },
   { href: "/rooms", label: "Room Management", icon: BedDouble },
   { href: "/customers", label: "Customers", icon: Users },
   { href: "/staff", label: "Staff", icon: Briefcase },
+  { href: "/profile", label: "Profile", icon: UserCircle2 },
   { href: "/cms", label: "Website CMS", icon: Globe },
 ] as const;
 
 export function DigitalSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, logout } = useStaffAuth();
+  const displayName = user?.fullName ?? "Staff";
+  const roleLabel = user?.role?.name?.replace(/_/g, " ") ?? "Staff";
+  const handleLine =
+    user?.username !== undefined ? `@${user.username} · ${roleLabel}` : roleLabel;
 
   return (
     <aside
       className={cn(
-        "relative flex h-screen min-h-screen w-[17.5rem] shrink-0 flex-col overflow-hidden rounded-none ring-0",
+        "relative flex h-screen min-h-screen w-[17.5rem] shrink-0 flex-col overflow-hidden rounded-none ring-0 print:hidden",
         "bg-white shadow-sidebar-light dark:bg-transparent dark:shadow-[6px_0_40px_rgba(0,0,0,0.35)]",
       )}
     >
@@ -69,6 +90,8 @@ export function DigitalSidebar() {
             const active =
               href === "/"
                 ? pathname === "/" || pathname === "/dashboard"
+                : href === "/bookings"
+                  ? pathname === "/bookings" || pathname.startsWith("/bookings/")
                 : href === "/rooms"
                   ? pathname === "/rooms" ||
                     pathname.startsWith("/rooms/") ||
@@ -99,7 +122,7 @@ export function DigitalSidebar() {
           })}
         </nav>
 
-        <div className="mt-auto pt-6">
+        <div className="mt-auto space-y-2 pt-6">
           <div
             className={cn(
               "rounded-2xl px-3 py-3 ring-0",
@@ -110,19 +133,30 @@ export function DigitalSidebar() {
             <div className="flex items-center gap-3">
               <Avatar className="size-10 ring-0">
                 <AvatarFallback className="bg-gradient-to-br from-[#006782] to-[#00CCFF] text-xs font-bold text-white">
-                  MC
+                  {staffInitials(displayName)}
                 </AvatarFallback>
               </Avatar>
-              <div className="min-w-0 leading-tight">
-                <p className="truncate text-sm font-semibold text-foreground dark:text-white">
-                  Marcus Chen
-                </p>
-                <p className="truncate text-[0.65rem] font-medium uppercase tracking-wide text-muted-foreground dark:text-white/55">
-                  General Manager
+              <div className="min-w-0 flex-1 leading-tight">
+                <p className="truncate text-sm font-semibold text-foreground dark:text-white">{displayName}</p>
+                <p className="truncate text-[0.65rem] font-medium tracking-wide text-muted-foreground dark:text-white/55">
+                  {handleLine}
                 </p>
               </div>
             </div>
           </div>
+          <Button
+            type="button"
+            variant="outline"
+            className="h-9 w-full rounded-full border-0 bg-white/80 text-xs font-semibold text-foreground shadow-sm hover:bg-muted dark:bg-white/[0.06] dark:text-white dark:hover:bg-white/[0.1]"
+            onClick={() => {
+              logout();
+              router.replace("/login");
+              router.refresh();
+            }}
+          >
+            <LogOut className="mr-2 size-3.5" strokeWidth={2} />
+            Sign out
+          </Button>
         </div>
       </div>
     </aside>

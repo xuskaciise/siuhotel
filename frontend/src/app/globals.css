@@ -194,3 +194,15 @@
     -webkit-backdrop-filter: blur(20px);
   }
 }
+
+@page {
+  margin: 12mm;
+}
+
+@media print {
+  .dashboard-canvas {
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    background: #fff !important;
+  }
+}
