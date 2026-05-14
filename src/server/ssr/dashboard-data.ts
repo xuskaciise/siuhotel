@@ -22,7 +22,8 @@ export async function ssrRoomsPageData(): Promise<{
   rooms: RoomWithTypeDto[];
   roomTypes: RoomTypeDto[];
 }> {
-  const [rows, types] = await Promise.all([roomService.listRooms({}), roomService.listRoomTypes()]);
+  const rows = await roomService.listRooms({});
+  const types = await roomService.listRoomTypes();
   return {
     rooms: toClientJson(roomService.formatRoomWithTypeListResponse(rows)) as unknown as RoomWithTypeDto[],
     roomTypes: toClientJson(roomService.formatRoomTypeListResponse(types)) as unknown as RoomTypeDto[],
@@ -44,11 +45,9 @@ export async function ssrBookingsPageData(): Promise<{
   roomTypes: RoomTypeDto[];
   rooms: RoomWithTypeDto[];
 }> {
-  const [bookingsRows, types, roomsRows] = await Promise.all([
-    bookingService.listBookings(),
-    roomService.listRoomTypes(),
-    roomService.listRooms({}),
-  ]);
+  const bookingsRows = await bookingService.listBookings();
+  const types = await roomService.listRoomTypes();
+  const roomsRows = await roomService.listRooms({});
   return {
     bookings: toClientJson(bookingService.formatBookingListResponse(bookingsRows)) as unknown as BookingDto[],
     roomTypes: toClientJson(roomService.formatRoomTypeListResponse(types)) as unknown as RoomTypeDto[],
