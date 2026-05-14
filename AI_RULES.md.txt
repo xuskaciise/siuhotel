@@ -2,7 +2,7 @@
 
 ## 🚨 STRICT TECHNOLOGY STACK (DO NOT VIOLATE)
 - Frontend: Next.js (App Router) + Tailwind CSS
-- Backend: Node.js with Fastify
+- API: Next.js Route Handlers (`src/app/api`) + server modules (`src/server`)
 - Database: PostgreSQL
 - ORM: Prisma
 - File Storage: MinIO (S3-compatible)
@@ -19,30 +19,32 @@
 
 ## 🧠 ARCHITECTURE RULES (MANDATORY)
 
-- Use modular architecture
-- Each module MUST have:
-  - controller
-  - service
-  - schema (validation)
-- Controllers handle request/response ONLY
+- Use modular architecture under `src/server/`
+- Each domain module MUST have:
+  - `*.service.ts` (business logic + Prisma)
+  - `*.schema.ts` (Zod validation)
+- HTTP entry: Next.js Route Handlers (`src/app/api/...`) dispatch to services (see `src/server/http/api-router.ts`); keep handlers thin — validate, call service, return JSON envelope
 - Services handle ALL business logic
-- No database queries in controllers
-- No business logic in routes
+- No database queries in route handlers except through services
 
 ---
 
-## 📁 PROJECT STRUCTURE (BACKEND)
+## 📁 PROJECT STRUCTURE (SERVER)
 
-src/
+`src/server/`
   modules/
     {module}/
-      {module}.controller.ts
       {module}.service.ts
       {module}.schema.ts
   lib/
     prisma.ts
     minio.ts
-  plugins/
+  http/
+    api-router.ts
+    json-envelope.ts
+    route-error.ts
+    jwt-staff.ts
+    staff-guard.ts
   utils/
 
 ---
@@ -70,7 +72,7 @@ src/
 
 - Use Zod ONLY for validation
 - All inputs MUST be validated
-- No inline validation in controllers
+- No inline validation in route handlers (use Zod schemas)
 
 ---
 

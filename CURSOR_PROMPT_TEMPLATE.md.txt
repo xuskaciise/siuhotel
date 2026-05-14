@@ -14,19 +14,19 @@ Example:
 
 "Read AI_RULES.md and SYSTEM_CONTEXT.md.
 
-Create a booking module using Fastify + Prisma.
+Create booking API behavior using Next.js Route Handlers + Prisma (services under `src/server`).
 
 Requirements:
 - Follow modular architecture
-- Use controller, service, schema separation
+- Use service + schema separation (add or extend `api-router.ts` dispatch as needed)
 - Validate input using Zod
 - Use clean and reusable code
 - Do not duplicate logic
 
 Files:
-- booking.controller.ts
 - booking.service.ts
-- booking.schema.ts"
+- booking.schema.ts
+- (HTTP wiring in `src/server/http/api-router.ts` or dedicated `app/api/.../route.ts` files)"
 
 ---
 

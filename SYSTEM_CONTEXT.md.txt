@@ -16,13 +16,13 @@ The system includes:
 ## 🧱 SYSTEM ARCHITECTURE
 
 - Frontend: Next.js (App Router)
-- Backend: Fastify (Node.js)
+- API: Next.js Route Handlers (same repo as UI)
 - Database: PostgreSQL (Prisma)
 - Storage: MinIO
 
 Architecture style:
-- API-based
-- Modular backend
+- API-based (same-origin `/api/*`)
+- Modular server code under `src/server`
 - Single database
 - Shared services
 

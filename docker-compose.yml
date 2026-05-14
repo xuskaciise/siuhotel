@@ -12,39 +12,21 @@ services:
     networks:
       - hotel_internal
 
-  hotel-backend:
+  hotel-frontend:
     build:
-      context: ./backend
+      context: .
       dockerfile: Dockerfile
-    container_name: hotel-backend
+    container_name: hotel-frontend
     restart: unless-stopped
     depends_on:
       - hotel-db
     environment:
       NODE_ENV: production
-      HOST: 0.0.0.0
       PORT: "3000"
-      # REQUIRED in production (change this!)
       JWT_SECRET: change-me-to-a-long-random-string
-      # NOTE: host must be "hotel-db" (service name)
       DATABASE_URL: postgresql://siu_hotel:siu_hotel_password_change_me@hotel-db:5432/siu_hotel?schema=public
-    networks:
-      - hotel_internal
-      - banklab_default
-
-  hotel-frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: hotel-frontend
-    restart: unless-stopped
-    depends_on:
-      - hotel-backend
-    environment:
-      NODE_ENV: production
-      PORT: "3000"
-      # Next rewrites use BACKEND_URL (or NEXT_PUBLIC_BACKEND_URL)
-      BACKEND_URL: http://hotel-backend:3000
+      # Server-side fetches to this container’s `/api/*` (same process as Next)
+      INTERNAL_APP_URL: http://127.0.0.1:3000
     ports:
       - "3000:3000"
     networks:
